@@ -7,135 +7,153 @@
 
 
 <?php
+include "config/koneksi.php";
+
+
 // RSS
-echo "<p align=center><a href=rss.xml target=_blank><img src=$f[folder]/images/rssku.jpg border=0 /></a><br />
-      <a href=rss.xml target=_blank>Langganan RSS</a></p>
-      <hr color=#e0cb91 noshade=noshade /><br />";
+echo "<p class='fs-6 text-center fw-bold text-white'><a class='link-warning text-white text-decoration-none link-underline-opacity-100-hover' href=rss.xml target=_blank><i class='fa-solid fa-square-rss'></i> Langganan RSS</a></p>
+      <hr color=#e0cb91 noshade=noshade />";
 
 // Form indeks berita
-echo "<img src=$f[folder]/images/indeksberita.jpg /><br /><br />
+echo "<p class='fs-6'><i class='fa-regular fa-circle-right'></i> <b>Indeks Berita</b></p>
       <form method=POST action='indeks-berita.html'>";
-combotgl(1, 31, 'tanggal', $tgl_skrg);
-echo " / ";
-combobln(1, 12, 'bulan', $bln_sekarang);
-echo " / ";
-combothn(2000, $thn_sekarang, 'tahun', $thn_sekarang);
-echo "<br /><input type=submit value=Go />
+      combotgl(1, 31, 'tanggal', $tgl_skrg);
+      echo " / ";
+      combobln(1, 12, 'bulan', $bln_sekarang);
+      echo " / ";
+      combothn(2000, $thn_sekarang, 'tahun', $thn_sekarang);
+echo "<br /><input class='btn btn-warning btn-sm w-75 h-25 mt-2 ms-3' type=submit value=Cari />
       </form>
-      <hr color=#e0cb91 noshade=noshade /><br />";
+      <hr color=#e0cb91 noshade=noshade />";
 
 // Kalender
-echo "<img src='$f[folder]/images/kalender.jpg' /><p align=center>";
+echo "<p class='fs-6 mb-2'><i class='fa-solid fa-calendar-days'></i> <b>Kalender</b></p>";
 
 $tgl_skrg = date("d");
 $bln_skrg = date("n");
 $thn_skrg = date("Y");
 
+
 echo buatkalender($tgl_skrg, $bln_skrg, $thn_skrg);
 
-echo "</p><hr color=#e0cb91 noshade=noshade /><br />";
+echo "<hr class='my-2' style='border-color: #e0cb91;'>";
 
 
 // Statistik user
-echo "<img src='$f[folder]/images/statistik.jpg' /><br />";
+echo "<p class='fs-6'><i class='fa-solid fa-users'></i> <b>Pengunjung</b></p>";
 
-$ip      = $_SERVER['REMOTE_ADDR']; // Mendapatkan IP komputer user
-$tanggal = date("Ymd"); // Mendapatkan tanggal sekarang
-$waktu   = time(); // 
+$ip      = $_SERVER['REMOTE_ADDR']; // IP user
+$tanggal = date("Ymd"); // Tanggal hari ini
+$waktu   = time(); // Waktu sekarang
+$bataswaktu = $waktu - 300; // 5 menit terakhir untuk pengunjung online
 
-// Mencek berdasarkan IPnya, apakah user sudah pernah mengakses hari ini 
-$s = mysqli_query($conn, "SELECT * FROM statistik WHERE ip='$ip' AND tanggal='$tanggal'");
-// Kalau belum ada, simpan data user tersebut ke database
-if (mysqli_num_rows($s) == 0) {
-  mysqli_query($conn, "INSERT INTO statistik(ip, tanggal, hits, online) VALUES('$ip','$tanggal','1','$waktu')");
+// Query untuk mendapatkan statistik pengunjung
+$stmt = $conn->prepare("
+    SELECT 
+        COUNT(DISTINCT ip) AS total_pengunjung_hari_ini,
+        COUNT(hits) AS total_pengunjung,
+        SUM(hits) AS total_hits_hari_ini,
+        (SELECT SUM(hits) FROM statistik) AS total_hits,
+        (SELECT COUNT(*) FROM statistik WHERE online > ?) AS pengunjung_online
+    FROM statistik
+    WHERE tanggal = ?
+");
+$stmt->bind_param("is", $bataswaktu, $tanggal);
+$stmt->execute();
+$stmt->bind_result($pengunjung, $totalpengunjung, $hits, $totalhits, $pengunjungonline);
+$stmt->fetch();
+$stmt->close();
+
+// Cek apakah user sudah tercatat hari ini
+$stmt = $conn->prepare("SELECT COUNT(*) FROM statistik WHERE ip = ? AND tanggal = ?");
+$stmt->bind_param("ss", $ip, $tanggal);
+$stmt->execute();
+$stmt->bind_result($user_tercatat);
+$stmt->fetch();
+$stmt->close();
+
+// Jika belum ada, tambahkan ke database
+if ($user_tercatat == 0) {
+    $stmt = $conn->prepare("INSERT INTO statistik (ip, tanggal, hits, online) VALUES (?, ?, 1, ?)");
+    $stmt->bind_param("ssi", $ip, $tanggal, $waktu);
+    $stmt->execute();
+    $stmt->close();
 } else {
-  mysqli_query($conn, "UPDATE statistik SET hits=hits+1, online='$waktu' WHERE ip='$ip' AND tanggal='$tanggal'");
+    $stmt = $conn->prepare("UPDATE statistik SET hits = hits + 1, online = ? WHERE ip = ? AND tanggal = ?");
+    $stmt->bind_param("iss", $waktu, $ip, $tanggal);
+    $stmt->execute();
+    $stmt->close();
 }
 
-$pengunjung_query = mysqli_query($conn, "SELECT COUNT(DISTINCT ip) AS total FROM statistik WHERE tanggal='$tanggal'");
-$pengunjung_data = mysqli_fetch_assoc($pengunjung_query);
-$pengunjung = $pengunjung_data['total'];
+// Format angka dengan Bootstrap Badge
+$tothitsgbr = sprintf("%06d", $totalhits);
+$tothitsgbr = "<span class='badge bg-warning fs-4'>$tothitsgbr</span>";
 
-$totalpengunjung_query = mysqli_query($conn, "SELECT COUNT(hits) AS total FROM statistik");
-$totalpengunjung_data = mysqli_fetch_assoc($totalpengunjung_query);
-$totalpengunjung = $totalpengunjung_data['total'];
+// Tampilkan statistik dengan tampilan Bootstrap
+echo "<p align=center>$tothitsgbr</p>
+      <p><i class='fa-solid fa-calendar-day'></i> <b>Pengunjung hari ini:</b> <span class='badge bg-warning text-white'>$pengunjung</span></p>
+      <p><i class='fa-solid fa-users'></i> <b>Total pengunjung:</b> <span class='badge bg-warning text-white'>$totalpengunjung</span></p>
+      <p><i class='fa-solid fa-chart-line'></i> <b>Hits hari ini:</b> <span class='badge bg-warning text-white'>$hits</span></p>
+      <p><i class='fa-solid fa-chart-bar'></i> <b>Total Hits:</b> <span class='badge bg-warning text-white'>$totalhits</span></p>
+      <p><i class='fa-solid fa-user-clock'></i> <b>Pengunjung Online:</b> <span class='badge bg-warning text-white'>$pengunjungonline</span></p>";
 
-$hits_query = mysqli_query($conn, "SELECT SUM(hits) AS total FROM statistik WHERE tanggal='$tanggal'");
-$hits_data = mysqli_fetch_assoc($hits_query);
-$hits = $hits_data['total'];
-
-$totalhits_query = mysqli_query($conn, "SELECT SUM(hits) AS total FROM statistik");
-$totalhits_data = mysqli_fetch_assoc($totalhits_query);
-$totalhits = $totalhits_data['total'];
-
-$tothitsgbr_query = mysqli_query($conn, "SELECT SUM(hits) AS total FROM statistik");
-$tothitsgbr_data = mysqli_fetch_assoc($tothitsgbr_query);
-$tothitsgbr = $tothitsgbr_data['total'];
-
-$bataswaktu = time() - 300;
-
-$pengunjungonline_query = mysqli_query($conn, "SELECT COUNT(*) AS total FROM statistik WHERE online > '$bataswaktu'");
-$pengunjungonline_data = mysqli_fetch_assoc($pengunjungonline_query);
-$pengunjungonline = $pengunjungonline_data['total'];
-
-
-$path = "counter/";
-$ext = ".png";
-
-$tothitsgbr = sprintf("%06d", $tothitsgbr);
-for ($i = 0; $i <= 9; $i++) {
-  $tothitsgbr = str_replace($i, "<img src='$path$i$ext' alt='$i'>", $tothitsgbr);
-}
-
-echo "<p align=center>$tothitsgbr </p>
-      <img src=counter/hariini.png> Pengunjung hari ini : $pengunjung <br>
-      <img src=counter/total.png> Total pengunjung    : $totalpengunjung <br><br>
-      <img src=counter/hariini.png> Hits hari ini    : $hits <br>
-      <img src=counter/total.png> Total Hits       : $totalhits <br><br>
-      <img src=counter/online.png> Pengunjung Online: $pengunjungonline
-      <hr color=#e0cb91 noshade=noshade /><br />";
+echo "<hr color=#e0cb91 noshade=noshade />";
 
 
 // Polling
-echo "<img src='$f[folder]/images/polling.jpg' /><br /><br />";
+echo "<p class='fs-6'><i class='fa-solid fa-poll-h'></i> <b>Voting</b></p>";
 echo "<b>Pilih Browser Favorit Anda?</b> <br /><br />";
 
 echo "<form method=POST action='hasil-poling.html'>";
 
 $poling = mysqli_query($conn, "SELECT * FROM poling WHERE aktif='Y'");
 while ($p = mysqli_fetch_assoc($poling)) {
-  echo "<input type=radio name=pilihan value='$p[id_poling]' />$p[pilihan]<br />";
+  echo "<div class='form-check'>
+    <input class='form-check-input' type='checkbox' value='$p[id_poling]' id='flexCheckDefault'>
+    <label class='form-check-label' for='flexCheckDefault'></label>
+      $p[pilihan]
+    </label>
+  </div>";
 }
-echo "<p align=center><input type=submit value=Vote /></p>
+echo "<input class='btn btn-warning btn-sm w-75 h-25 mt-2 ms-3' type=submit value=Vote />
       </form>
-      <p align=center><a href=lihat-poling.html>Lihat Hasil Poling</a></p>
+      <p class='text-center mt-2'><a class='link-warning text-white text-decoration-none link-underline-opacity-100-hover' href=lihat-poling.html>Lihat Hasil Voting</a></p>
       <hr color=#e0cb91 noshade=noshade /><br />";
 
 
-// Shoutbox
-echo "<img src='$f[folder]/images/shoutbox.jpg' /><br /><br />";
-echo "<iframe src='shoutbox.php' width=160 height=250 border=1 solid></iframe><br /><br />";
-echo "  <table class=shout width=100%>
-        <form name=formshout action=simpanshoutbox.php method=POST>
-        <tr><td>Nama</td><td> : <input class=shout type=text name=nama size=21></td></tr>
-        <tr><td>Website</td><td> : <input class=shout type=text name=website size=21></td></tr>
-        <tr><td valign=top>Pesan</td><td> <textarea class=shout name='pesan' style='width: 115px; height: 35px;'></textarea></td></tr>";
-?>
-<tr>
-  <td colspan=2>
-    <a onClick="addSmiley(':-)')"><img src='smiley/1.gif'></a>
-    <a onClick="addSmiley(':-(')"><img src='smiley/2.gif'></a>
-    <a onClick="addSmiley(';-)')"><img src='smiley/3.gif'></a>
-    <a onClick="addSmiley(';-D')"><img src='smiley/4.gif'></a>
-    <a onClick="addSmiley(';;-)')"><img src='smiley/5.gif'></a>
-    <a onClick="addSmiley('<:D>')"><img src='smiley/6.gif'></a>
-  </td>
-</tr>
-<?php
-echo "<tr><td colspan=2><input class=shout type=submit name=submit value=Kirim><input class=shout type=reset name=reset value=Reset></td></tr>
-        </form></table>";
+// Shoutbox / chat box
+echo "<p class='fs-6 fw-bold'><i class='fa-solid fa-comments'></i> Chat Box</p>";
 
-echo "<hr color=#e0cb91 noshade=noshade /><br />";
+// Shoutbox iframe dengan Bootstrap card
+echo "<div class='card border-warning mb-3' style='max-width: 18rem;'>
+        <div class='card-body p-2'>
+          <iframe src='shoutbox.php' class='w-100 border rounded' style='height: 250px;'></iframe>
+        </div>
+      </div>";
+
+// Form chat dengan Bootstrap styling
+echo "<form name='formshout' action='simpanshoutbox.php' method='POST' class='border p-1 rounded shadow-sm bg-light'>
+        <div class='mb-1'>
+          <input type='text' name='nama' style='font-size: 10px;' class='form-control' placeholder='Masukkan nama' required>
+        </div>
+        <div class='mb-1'>
+          <input type='text' name='website' style='font-size: 10px;' class='form-control' placeholder='https://contoh.com'>
+        </div>
+        <div class='mb-1'>
+          <textarea name='pesan' style='font-size: 10px;' class='form-control' rows='3' placeholder='Tulis pesan...' required></textarea>
+        </div>";
+
+?>
+
+<?php
+echo "<div class='d-flex gap-2'>
+        <button type='submit' name='submit' style='font-size: 10px;' class='btn btn-primary btn-sm'><i class='fa-solid fa-paper-plane'></i> Kirim</button>
+        <button type='reset' name='reset' style='font-size: 10px;' class='btn btn-danger btn-sm'><i class='fa-solid fa-rotate-left'></i> Reset</button>
+      </div>
+    </form>";
+
+echo "<hr class='my-4 border-warning'>";
+
 
 // Banner
 $banner = mysqli_query($conn, "SELECT * FROM banner 

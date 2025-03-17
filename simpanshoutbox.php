@@ -9,7 +9,7 @@ function anti_injection($conn, $data)
 }
 
 // Koneksi database (pastikan ini ada)
-$conn = mysqli_connect("localhost", "root", "", "db_proyek");
+$conn = mysqli_connect("localhost", "root", "Ruspian1998.", "db_Berita");
 
 if (!$conn) {
   die("Koneksi gagal: " . mysqli_connect_error());

@@ -1,59 +1,58 @@
 <?php
-function buatkalender($tanggal,$bulan,$tahun) {      
-  $bulanan=array(1=>"Januari","Februari","Maret","April",
-                    "Mei","Juni","Juli","Agustus","September", 
-                    "Oktober","November","Desember");
-  $bln=date("n");
-  $thn=date("Y");
+function buatkalender($tanggal, $bulan, $tahun) {
+    date_default_timezone_set('Asia/Jakarta'); // Pastikan zona waktu sesuai
 
-  $jmlhari = date("t",mktime(0,0,0,$bulan,1,$tahun));
-  $haritglsatu = date("w",mktime(0,0,0,$bulan,1,$tahun));
+    $hariIni = date("d");
+    $bulanIni = date("n");
+    $tahunIni = date("Y");
 
-  $kalender = "<table cellspacing=1 cellpadding=4  
-               border=0 class=tabel_data>\n";
-  $kalender .= "<tr class=tr_terang>
-               <td colspan=7>$bulanan[$bln], $thn
-               </td></tr>\n";
+    $bulanIndo = array(1 => "Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des");
 
-  $kalender .= "<tr class=tr_judul>
-                <td>M</td><td>S</td><td>S</td><td>R</td>
-                <td>K</td><td>J</td><td>S</td></tr>\n";
-  $a 	  = 1;
-  $adabaris   = TRUE;
-  $mulaicetak = 0;
-  while ($adabaris) {
-    $kalender .= "<tr align=center class=tr_terang>";
-    for ($i = 0; $i < 7; $i++ ) {
-      if ($mulaicetak < $haritglsatu) {
-        $kalender .= "<td>&nbsp;</td>";
-        $mulaicetak++;
-      } 
-      elseif ($a <= $jmlhari) {
-        $tt = $a;
-        if ($a == $tanggal) { 
-          $tt = "<span style='color: blue; font-weight: bold; 
-                 font-size: larger; text-decoration: blink;'>
-                 $tt</span>"; 
+    $jmlHari = date("t", mktime(0, 0, 0, $bulan, 1, $tahun));
+    $hariPertama = date("w", mktime(0, 0, 0, $bulan, 1, $tahun));
+
+    $kalender = "<div class='table-responsive' style='max-width: 150px; font-size: 0.25rem;'>";
+    $kalender .= "<table class='table table-bordered table-sm text-center' style='width: 100%; font-size: 0.60rem;'>";
+    $kalender .= "<thead class='table-primary'>
+                    <tr><th colspan='7' class='p-1'>{$bulanIndo[$bulan]} $tahun</th></tr>
+                    <tr class='bg-light'>
+                        <th class='text-danger p-1'>M</th> 
+                        <th class='p-1'>S</th> <th class='p-1'>S</th> <th class='p-1'>R</th>
+                        <th class='p-1'>K</th> <th class='p-1'>J</th> <th class='p-1'>S</th>
+                    </tr>
+                  </thead>
+                  <tbody>";
+
+    $a = 1;
+    $mulaicetak = 0;
+    $adabaris = true;
+
+    while ($adabaris) {
+        $kalender .= "<tr>";
+        for ($i = 0; $i < 7; $i++) {
+            if ($mulaicetak < $hariPertama) {
+                $kalender .= "<td class='p-1'>&nbsp;</td>";
+                $mulaicetak++;
+            } elseif ($a <= $jmlHari) {
+                $tt = $a;
+                $classHari = ($i == 0) ? "text-danger" : "";
+                
+                // Highlight tanggal hari ini
+                if ($a == (int)$hariIni && $bulan == (int)$bulanIni && $tahun == (int)$tahunIni) {
+                    $tt = "<span class='fw-bold text-white bg-primary p-1'>$tt</span>";
+                }
+                
+                $kalender .= "<td class='$classHari p-1'>$tt</td>";
+                $a++;
+            } else {
+                $kalender .= "<td class='p-1'>&nbsp;</td>";
+            }
         }
-        if ($i == 0) { 
-          $tt = "<font color=\"#FF0000\">$tt</font>"; 
-        }
-        $kalender .= "<td>$tt</td>";
-        $a++;
-      } 
-      else {
-        $kalender .= "<td>&nbsp;</td>";
-      }
+        $kalender .= "</tr>";
+        $adabaris = ($a <= $jmlHari);
     }
-    $kalender .= "</tr>\n";
-    if ($a <= $jmlhari) { 
-      $adabaris = TRUE; 
-    } 
-    else { 
-      $adabaris = FALSE; 
-    }
-  }
-  $kalender .= "</table>\n";
-  return $kalender;
+    $kalender .= "</tbody></table></div>";
+
+    return $kalender;
 }
 ?>

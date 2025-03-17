@@ -208,14 +208,14 @@ textarea {
   color: #993300;
 }
 input#shout {
-  font-size: 10px;
+  font-size: 8px;
 }
 .shout {
-  font-size: 10px;
+  font-size: 8px;
   line-height: 135%;
 }
 .shoutdate {
-  font-size: 10px;
+  font-size: 6px;
   line-height: 135%;
   padding-left: 40px;
   color: #ee1c24;

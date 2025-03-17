@@ -29,7 +29,7 @@ while ($p = mysqli_fetch_array($populer)) {
 echo "</ul><br /><hr color=#FCEDC7 noshade=noshade /><br />";
 
 // Komentar Terakhir
-echo "<p class='fs-6'><i class='fa-solid fa-comments'></i> <b>Komentar</b></p><ul>";
+echo "<p class='fs-6'><i class='fa-solid fa-message'></i> <b>Komentar</b></p><ul>";
 $komentar = mysqli_query($conn, "SELECT * FROM berita,komentar 
                       WHERE komentar.id_berita=berita.id_berita  
                       ORDER BY id_komentar DESC LIMIT 6");
