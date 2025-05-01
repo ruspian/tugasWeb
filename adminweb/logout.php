@@ -1,11 +1,12 @@
 <?php
-  session_start();
-  session_destroy();
-  echo "<center>Anda telah sukses keluar sistem <b>[LOGOUT]<b><br>";
+session_start();
+session_unset();
+session_destroy();
 
-  echo "<a href =index.php> Klick Untuk Login </a><br>";
+// Buat ulang CSRF token agar aman
+session_start();
+$_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 
-// Apabila setelah logout langsung menuju halaman utama website, aktifkan baris di bawah ini:
-
-//  header('location:http://www.alamatwebsite.com');
+header("Location: index.php");
+exit();
 ?>

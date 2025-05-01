@@ -4,106 +4,124 @@ include "../config/library.php";
 include "../config/fungsi_indotgl.php";
 include "../config/fungsi_combobox.php";
 include "../config/class_paging.php";
+?>
 
-// Bagian Home
-if ($_GET['module'] == 'home') {
-  echo "<h2>Selamat Datang</h2>
-          <p>Hai <b>$_SESSION[namalengkap]</b>, selamat datang di halaman Administrator website bahrin.com.<br> Silahkan klik menu pilihan yang berada
-          di sebelah kiri untuk mengelola content website. </p>
-          <p>&nbsp;</p><p>&nbsp;</p><p>&nbsp;</p><p>&nbsp;</p><p>&nbsp;</p><p>&nbsp;</p><p>&nbsp;</p><p>&nbsp;</p><p>&nbsp;</p><p>&nbsp;</p>
-          <p align=right>Login : $hari_ini, ";
-  echo tgl_indo(date("Y m d"));
-  echo " | ";
-  echo date("H:i:s");
-  echo " WIB</p>";
-}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Admin Panel</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-4">
+        <?php
+        $module = isset($_GET['module']) ? $_GET['module'] : 'home';
 
-// Bagian User
-elseif ($_GET['module'] == 'profil') {
-  include "modul/mod_profil/profil.php";
-}
+        switch ($module) {
+            case 'home':
+                echo "
+                <div class='container mt-5 mb-5'>
+                    <div class='row justify-content-center'>
+                        <div class='col-md-12 '>
+                            <div class='card shadow-lg border-0 animate__animated animate__fadeIn'>
+                                <div class='card-body text-center'>
+                                    <h2 class='text-success fw-bold'>
+                                        <i class='bi bi-house-door-fill'></i> Selamat Datang
+                                    </h2>
+                                    <p class='mt-3'>
+                                        Hai <b>$_SESSION[namalengkap]</b>, selamat datang di halaman Administrator website bahrin.com.
+                                        Silakan klik menu pilihan di sebelah kiri untuk mengelola konten website.
+                                    </p>
+                                    <hr>
+                                    <p class='text-muted'>
+                                        <i class='bi bi-calendar-event'></i> Login: " . tgl_indo(date("Y m d")) . " | " . date("H:i:s") . " WIB
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>";
+                break;
 
-// Bagian User
-elseif ($_GET['module'] == 'user') {
-  include "modul/mod_users/users.php";
-}
+            case 'profil':
+                include "modul/mod_profil/profil.php";
+                break;
 
-// Bagian Modul
-elseif ($_GET['module'] == 'modul') {
-  include "modul/mod_modul/modul.php";
-}
+            case 'user':
+                include "modul/mod_users/users.php";
+                break;
 
-// Bagian Kategori
-elseif ($_GET['module'] == 'kategori') {
-  include "modul/mod_kategori/kategori.php";
-}
+            case 'modul':
+                include "modul/mod_modul/modul.php";
+                break;
 
-// Bagian Berita
-elseif ($_GET['module'] == 'berita') {
-  include "modul/mod_berita/berita.php";
-}
+            case 'kategori':
+                include "modul/mod_kategori/kategori.php";
+                break;
 
-// Bagian Komentar Berita
-elseif ($_GET['module'] == 'komentar') {
-  include "modul/mod_komentar/komentar.php";
-}
+            case 'berita':
+                include "modul/mod_berita/berita.php";
+                break;
 
-// Bagian Tag
-elseif ($_GET['module'] == 'tag') {
-  include "modul/mod_tag/tag.php";
-}
+            case 'komentar':
+                include "modul/mod_komentar/komentar.php";
+                break;
 
-// Bagian Agenda
-elseif ($_GET['module'] == 'agenda') {
-  include "modul/mod_agenda/agenda.php";
-}
+            case 'tag':
+                include "modul/mod_tag/tag.php";
+                break;
 
-// Bagian Banner
-elseif ($_GET['module'] == 'banner') {
-  include "modul/mod_banner/banner.php";
-}
+            case 'agenda':
+                include "modul/mod_agenda/agenda.php";
+                break;
 
-// Bagian Poling
-elseif ($_GET['module'] == 'poling') {
-  include "modul/mod_poling/poling.php";
-}
+            case 'banner':
+                include "modul/mod_banner/banner.php";
+                break;
 
-// Bagian Download
-elseif ($_GET['module'] == 'download') {
-  include "modul/mod_download/download.php";
-}
+            case 'poling':
+                include "modul/mod_poling/poling.php";
+                break;
 
-// Bagian Hubungi Kami
-elseif ($_GET['module'] == 'hubungi') {
-  include "modul/mod_hubungi/hubungi.php";
-}
+            case 'download':
+                include "modul/mod_download/download.php";
+                break;
 
-// Bagian Templates
-elseif ($_GET['module'] == 'templates') {
-  include "modul/mod_templates/templates.php";
-}
+            case 'hubungi':
+                include "modul/mod_hubungi/hubungi.php";
+                break;
 
-// Bagian Shoutbox
-elseif ($_GET['module'] == 'shoutbox') {
-  include "modul/mod_shoutbox/shoutbox.php";
-}
+            case 'templates':
+                include "modul/mod_templates/templates.php";
+                break;
 
-// Bagian Album
-elseif ($_GET['module'] == 'album') {
-  include "modul/mod_album/album.php";
-}
+            case 'shoutbox':
+                include "modul/mod_shoutbox/shoutbox.php";
+                break;
 
-// Bagian Galeri Foto
-elseif ($_GET['module'] == 'galerifoto') {
-  include "modul/mod_galerifoto/galerifoto.php";
-}
+            case 'album':
+                include "modul/mod_album/album.php";
+                break;
 
-// Bagian Kata Jelek
-elseif ($_GET['module'] == 'katajelek') {
-  include "modul/mod_katajelek/katajelek.php";
-}
+            case 'galerifoto':
+                include "modul/mod_galerifoto/galerifoto.php";
+                break;
 
-// Apabila modul tidak ditemukan
-else {
-  echo "<p><b>MODUL BELUM ADA ATAU BELUM LENGKAP</b></p>";
-}
+            case 'katajelek':
+                include "modul/mod_katajelek/katajelek.php";
+                break;
+
+            default:
+                echo "<div class='alert alert-danger'><b>MODUL BELUM ADA ATAU BELUM LENGKAP</b></div>";
+                break;
+        }
+        ?>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

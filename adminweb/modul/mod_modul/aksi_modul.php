@@ -2,46 +2,65 @@
 session_start();
 include "../../../config/koneksi.php";
 
-$module = $_GET['module'];
-$act = $_GET['act'];
+$module = $_GET['module'] ?? '';
+$act    = $_GET['act'] ?? '';
 
 // Hapus modul
-if ($module == 'modul' and $act == 'hapus') {
-  mysqli_query($conn, "DELETE FROM modul WHERE id_modul='$_GET[id]'");
-  header('location:../../media.php?module=' . $module);
+if ($module === 'modul' && $act === 'hapus') {
+    $id = mysqli_real_escape_string($conn, $_GET['id']);
+    mysqli_query($conn, "DELETE FROM modul WHERE id_modul = '$id'");
+    header('Location: ../../media.php?module=' . $module);
+    exit;
 }
 
 // Input modul
-elseif ($module == 'modul' and $act == 'input') {
-  // Cari angka urutan terakhir
-  $u = mysqli_query($conn, "SELECT urutan FROM modul ORDER by urutan DESC");
-  $d = mysqli_fetch_array($u);
-  $urutan = $d['urutan'] + 1;
+elseif ($module === 'modul' && $act === 'input') {
+    $nama_modul = mysqli_real_escape_string($conn, $_POST['nama_modul'] ?? '');
+    $link       = mysqli_real_escape_string($conn, $_POST['link'] ?? '');
+    $publish    = mysqli_real_escape_string($conn, $_POST['publish'] ?? 'Y');
+    $aktif      = mysqli_real_escape_string($conn, $_POST['aktif'] ?? 'Y');
+    $status     = mysqli_real_escape_string($conn, $_POST['status'] ?? 'user');
 
-  // Input data modul
-  mysqli_query($conn, "INSERT INTO modul(nama_modul,
-                                 link,
-                                 publish,
-                                 aktif,
-                                 status,
-                                 urutan) 
-	                       VALUES('$_POST[nama_modul]',
-                                '$_POST[link]',
-                                '$_POST[publish]',
-                                '$_POST[aktif]',
-                                '$_POST[status]',
-                                '$urutan')");
-  header('location:../../media.php?module=' . $module);
+    // Cari urutan terakhir
+    $u = mysqli_query($conn, "SELECT urutan FROM modul ORDER BY urutan DESC LIMIT 1");
+    $d = mysqli_fetch_array($u);
+    $urutan = ($d) ? $d['urutan'] + 1 : 1;
+
+    $query = mysqli_query($conn, "INSERT INTO modul (nama_modul, link, publish, aktif, status, urutan) 
+                VALUES ('$nama_modul', '$link', '$publish', '$aktif', '$status', '$urutan')");
+
+    if (!$query) {
+        die("Gagal menambahkan modul: " . mysqli_error($conn));
+    }
+
+    header('Location: ../../media.php?module=' . $module);
+    exit;
 }
 
 // Update modul
-elseif ($module == 'modul' and $act == 'update') {
-  mysqli_query($conn, "UPDATE modul SET nama_modul = '$_POST[nama_modul]',
-                                link       = '$_POST[link]',
-                                publish    = '$_POST[publish]',
-                                aktif      = '$_POST[aktif]',
-                                status     = '$_POST[status]',
-                                urutan     = '$_POST[urutan]'  
-                          WHERE id_modul   = '$_POST[id]'");
-  header('location:../../media.php?module=' . $module);
+elseif ($module === 'modul' && $act === 'update') {
+    $id         = mysqli_real_escape_string($conn, $_POST['id'] ?? '');
+    $nama_modul = mysqli_real_escape_string($conn, $_POST['nama_modul'] ?? '');
+    $link       = mysqli_real_escape_string($conn, $_POST['link'] ?? '');
+    $publish    = mysqli_real_escape_string($conn, $_POST['publish'] ?? 'Y');
+    $aktif      = mysqli_real_escape_string($conn, $_POST['aktif'] ?? 'Y');
+    $status     = mysqli_real_escape_string($conn, $_POST['status'] ?? 'user');
+    $urutan     = mysqli_real_escape_string($conn, $_POST['urutan'] ?? '1');
+
+    $query = mysqli_query($conn, "UPDATE modul SET 
+                    nama_modul = '$nama_modul',
+                    link       = '$link',
+                    publish    = '$publish',
+                    aktif      = '$aktif',
+                    status     = '$status',
+                    urutan     = '$urutan'  
+                WHERE id_modul = '$id'");
+
+    if (!$query) {
+        die("Gagal mengupdate modul: " . mysqli_error($conn));
+    }
+
+    header('Location: ../../media.php?module=' . $module);
+    exit;
 }
+?>

@@ -1,44 +1,71 @@
-<html>
-<head>
-<title></title>
-<script language="javascript">
-function validasi(form){
-  if (form.username.value == ""){
-    alert("Anda belum mengisikan Username.");
-    form.username.focus();
-    return (false);
-  }
-     
-  if (form.password.value == ""){
-    alert("Anda belum mengisikan Password.");
-    form.password.focus();
-    return (false);
-  }
-  return (true);
+<?php
+session_start();
+if (!isset($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
-</script>
-<link href="style.css" rel="stylesheet" type="text/css" />
+?>
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
+    <script src="https://kit.fontawesome.com/a0aa1a6901.js" crossorigin="anonymous"></script>
+
+    <style>
+        .flex-form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+        .flex-form .form-control {
+            width: 100%;
+        }
+    </style>
 </head>
-<body OnLoad="document.login.username.focus();">
-<div id="header">
-  <div id="content">
-		<h2>Login</h2>
-    <img src="images/login-welcome.gif" width="97" height="105" hspace="10" align="left">
+<body class="bg-light">
+<div class="container d-flex justify-content-center align-items-center vh-100">
+    <div class="card shadow-lg p-4" style="width: 350px;">
+        <?php
+        if (isset($_SESSION['username'])) {
+            echo "<div class='alert alert-success text-center'>
+                    <i class='bi bi-check-circle-fill'></i> Anda sudah login sebagai <b>{$_SESSION['username']}</b>.
+                  </div>
+                  <div class='d-grid'>
+                      <a href='media.php?module=home' class='btn btn-primary'><i class='bi bi-house-door'></i> Dashboard</a>
+                      <a href='logout.php' class='btn btn-danger mt-2'><i class='bi bi-box-arrow-right'></i> Logout</a>
+                  </div>";
+        } else {
+        ?>
+        
+        <!-- MENAMPILKAN ERROR JIKA ADA -->
+        <?php if (isset($_SESSION['error'])) { ?>
+            <div class="alert alert-danger text-center">
+                <i class="bi bi-exclamation-triangle-fill"></i> <?php echo $_SESSION['error']; unset($_SESSION['error']); ?>
+            </div>
+        <?php } ?>
+        
+        <!-- FORM LOGIN -->
+        <form name="login" action="cek_login.php" method="POST" class="flex-form">
+          <div class="text-center">
+            <p class="display-4"><i class="fa-solid fa-user-lock"></i></p>
+            <h3 class="fw-bold text-success">Masuk</h3>
+          </div>
+            <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+            <input type="text" name="username" class="form-control" placeholder="Masukkan username" required>
+            <input type="password" name="password" class="form-control" placeholder="Masukkan password" required>
+            <button type="submit" class="btn btn-success w-100"><i class="bi bi-box-arrow-in-right"></i> Login</button>
+        </form>
 
-<form name="login" action="cek_login.php" method="POST" onSubmit="return validasi(this)">
-<table>
-<tr><td>Username</td><td> : <input type="text" name="username"></td></tr>
-<tr><td>Password</td><td> : <input type="password" name="password"></td></tr>
-<tr><td colspan="2"><input type="submit" value="Login"></td></tr>
-</table>
-</form>
-
-
-<p>&nbsp;</p>
-  </div>
-	<div id="footer">
-			Copyright &copy; 2022 by bahrin.com All rights reserved.
-	</div>
+        <?php } ?>
+    </div>
 </div>
 </body>
 </html>

@@ -1,117 +1,103 @@
 <?php
 session_start();
 include "../../../config/koneksi.php";
-include "../../../config/library.php";
-include "../../../config/fungsi_thumb.php";
 include "../../../config/fungsi_seo.php";
+include "../../../config/library.php";
 
-$module = $_GET['module'];
-$act = $_GET['act'];
-
-// Hapus berita
-if ($module == 'berita' and $act == 'hapus') {
-  mysqli_query($conn, "DELETE FROM berita WHERE id_berita='$_GET[id]'");
-  header('location:../../media.php?module=' . $module);
+// Escape input
+function escape($data)
+{
+    global $conn;
+    return mysqli_real_escape_string($conn, $data);
 }
 
-// Input berita
-elseif ($module == 'berita' and $act == 'input') {
-  $lokasi_file    = $_FILES['fupload']['tmp_name'];
-  $tipe_file      = $_FILES['fupload']['type'];
-  $nama_file      = $_FILES['fupload']['name'];
-  $acak           = rand(1, 99);
-  $nama_file_unik = $acak . $nama_file;
+$module = $_GET['module'] ?? '';
+$act = $_GET['act'] ?? '';
 
-  if (!empty($_POST['tag_seo'])) {
-    $tag_seo = $_POST['tag_seo'];
-    $tag = implode(',', $tag_seo);
-  }
-  $judul_seo      = seo_title($_POST['judul']);
+// --- HAPUS BERITA ---
+if ($module === 'berita' && $act === 'hapus') {
+    $id_berita = escape($_GET['id']);
+    $query = mysqli_query($conn, "DELETE FROM berita WHERE id_berita='$id_berita'");
 
-  // Apabila ada gambar yang diupload
-  if (!empty($lokasi_file)) {
-    UploadImage($nama_file_unik);
-
-    mysqli_query($conn, "INSERT INTO berita(judul,
-                                    judul_seo,
-                                    id_kategori,
-                                    username,
-                                    isi_berita,
-                                    jam,
-                                    tanggal,
-                                    hari,
-                                    tag, 
-                                    gambar) 
-                            VALUES('$_POST[judul]',
-                                   '$judul_seo',
-                                   '$_POST[kategori]',
-                                   '$_SESSION[namauser]',
-                                   '$_POST[isi_berita]',
-                                   '$jam_sekarang',
-                                   '$tgl_sekarang',
-                                   '$hari_ini',
-                                   '$tag',
-                                   '$nama_file_unik')");
-  } else {
-    mysqli_query($conn, "INSERT INTO berita(judul,
-                                    judul_seo, 
-                                    id_kategori,
-                                    username,
-                                    isi_berita,
-                                    jam,
-                                    tanggal,
-                                    tag, 
-                                    hari) 
-                            VALUES('$_POST[judul]',
-                                   '$judul_seo',
-                                   '$_POST[kategori]',
-                                   '$_SESSION[namauser]',
-                                   '$_POST[isi_berita]',
-                                   '$jam_sekarang',
-                                   '$tgl_sekarang',
-                                   '$tag',
-                                   '$hari_ini')");
-  }
-
-  $jml = count($tag_seo);
-  for ($i = 0; $i < $jml; $i++) {
-    mysqli_query($conn, "UPDATE tag SET count=count+1 WHERE tag_seo='$tag_seo[$i]'");
-  }
-  header('location:../../media.php?module=' . $module);
+    header('Location: ../../media.php?module=' . $module);
+    exit();
 }
 
-// Update berita
-elseif ($module == 'berita' and $act == 'update') {
-  $lokasi_file    = $_FILES['fupload']['tmp_name'];
-  $tipe_file      = $_FILES['fupload']['type'];
-  $nama_file      = $_FILES['fupload']['name'];
-  $acak           = rand(1, 99);
-  $nama_file_unik = $acak . $nama_file;
+// --- INPUT BERITA ---
+elseif ($module === 'berita' && $act === 'input') {
+    $judul = escape($_POST['judul']);
+    $kategori = escape($_POST['kategori']);
+    $username = escape($_SESSION['namauser']);
+    $isi_berita = escape($_POST['isi_berita']);
+    $judul_seo = seo_title($judul);
+    $jam_sekarang = date("H:i:s");
+    $tgl_sekarang = date("Y-m-d");
+    $hari_ini = date("l");
 
-  if (!empty($_POST['tag_seo'])) {
-    $tag_seo = $_POST['tag_seo'];
-    $tag = implode(',', $tag_seo);
-  }
+    $tag_seo = $_POST['tag_seo'] ?? [];
+    $tag = !empty($tag_seo) ? implode(',', array_map('escape', $tag_seo)) : '';
 
-  $judul_seo      = seo_title($_POST['judul']);
+    $lokasi_file = $_FILES['fupload']['tmp_name'] ?? '';
+    $nama_file = $_FILES['fupload']['name'] ?? '';
+    $acak = rand(1, 99);
+    $nama_file_unik = $acak . basename($nama_file);
 
-  // Apabila gambar tidak diganti
-  if (empty($lokasi_file)) {
-    mysqli_query($conn, "UPDATE berita SET judul       = '$_POST[judul]',
-                                   judul_seo   = '$judul_seo', 
-                                   id_kategori = '$_POST[kategori]',
-                                   tag         = '$tag',
-                                   isi_berita  = '$_POST[isi_berita]'  
-                             WHERE id_berita   = '$_POST[id]'");
-  } else {
-    UploadImage($nama_file_unik);
-    mysqli_query($conn, "UPDATE berita SET judul       = '$_POST[judul]',
-                                   judul_seo   = '$judul_seo', 
-                                   id_kategori = '$_POST[kategori]',
-                                   tag         = '$tag',
-                                   isi_berita  = '$_POST[isi_berita]',
-                                   gambar      = '$nama_file_unik'   
-                             WHERE id_berita   = '$_POST[id]'");
-  }
-  header('location:../../media.php?module=' . $module);
+    if (!empty($lokasi_file)) {
+        if (function_exists('UploadImage')) {
+            UploadImage($nama_file_unik);
+        }
+        $query = mysqli_query($conn, "INSERT INTO berita(judul, judul_seo, id_kategori, username, isi_berita, jam, tanggal, hari, tag, gambar)
+                                      VALUES('$judul', '$judul_seo', '$kategori', '$username', '$isi_berita', '$jam_sekarang', '$tgl_sekarang', '$hari_ini', '$tag', '$nama_file_unik')");
+    } else {
+        $query = mysqli_query($conn, "INSERT INTO berita(judul, judul_seo, id_kategori, username, isi_berita, jam, tanggal, hari, tag)
+                                      VALUES('$judul', '$judul_seo', '$kategori', '$username', '$isi_berita', '$jam_sekarang', '$tgl_sekarang', '$hari_ini', '$tag')");
+    }
+
+    if ($query && !empty($tag_seo)) {
+        foreach ($tag_seo as $tag_item) {
+            $safe_tag = escape($tag_item);
+            mysqli_query($conn, "UPDATE tag SET count = count + 1 WHERE tag_seo = '$safe_tag'");
+        }
+    }
+
+    header('Location: ../../media.php?module=' . $module);
+    exit();
 }
+
+// --- UPDATE BERITA ---
+elseif ($module === 'berita' && $act === 'update') {
+    $id_berita = escape($_POST['id']);
+    $judul = escape($_POST['judul']);
+    $kategori = escape($_POST['kategori']);
+    $isi_berita = escape($_POST['isi_berita']);
+    $judul_seo = seo_title($judul);
+
+    $tag_seo = $_POST['tag_seo'] ?? [];
+    $tag = !empty($tag_seo) ? implode(',', array_map('escape', $tag_seo)) : '';
+
+    $lokasi_file = $_FILES['fupload']['tmp_name'] ?? '';
+    $nama_file = $_FILES['fupload']['name'] ?? '';
+    $acak = rand(1, 99);
+    $nama_file_unik = $acak . basename($nama_file);
+
+    if (!empty($lokasi_file)) {
+        if (function_exists('UploadImage')) {
+            UploadImage($nama_file_unik);
+        }
+        $query = mysqli_query($conn, "UPDATE berita SET judul='$judul', judul_seo='$judul_seo', id_kategori='$kategori', tag='$tag', isi_berita='$isi_berita', gambar='$nama_file_unik' WHERE id_berita='$id_berita'");
+    } else {
+        $query = mysqli_query($conn, "UPDATE berita SET judul='$judul', judul_seo='$judul_seo', id_kategori='$kategori', tag='$tag', isi_berita='$isi_berita' WHERE id_berita='$id_berita'");
+    }
+
+    // Jika berhasil update, redirect ke halaman daftar berita
+    if ($query) {
+        header('Location: ../../media.php?module=' . $module);
+        exit();
+    } else {
+        // Jika gagal, redirect kembali ke halaman edit dengan pesan error
+        header('Location: ../../media.php?module=' . $module . '&act=editberita&id=' . $id_berita);
+        exit();
+    }
+}
+
+?>

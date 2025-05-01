@@ -6,53 +6,90 @@ include "../../../config/fungsi_thumb.php";
 $module = $_GET['module'];
 $act = $_GET['act'];
 
+// Fungsi Validasi File
+function validasiFile($file) {
+    $allowed_types = ['image/jpeg', 'image/png', 'image/gif'];
+    $max_size = 2 * 1024 * 1024; // 2MB
+
+    if (!in_array($file['type'], $allowed_types)) {
+        return "Format file tidak diperbolehkan.";
+    }
+    if ($file['size'] > $max_size) {
+        return "Ukuran file terlalu besar (maks 2MB).";
+    }
+    return true;
+}
+
 // Input album
-if ($module == 'album' and $act == 'input') {
-  $lokasi_file = $_FILES['fupload']['tmp_name'];
-  $nama_file   = $_FILES['fupload']['name'];
-  $acak           = rand(000000, 999999);
-  $nama_file_unik = $acak . $nama_file;
+if ($module == 'album' && $act == 'input') {
+    $jdl_album = mysqli_real_escape_string($conn, $_POST['jdl_album']);
+    $album_seo = seo_title($jdl_album);
 
-  $album_seo = seo_title($_POST['jdl_album']);
+    // Cek jika ada file yang diupload
+    if (!empty($_FILES['fupload']['name'])) {
+        $file = $_FILES['fupload'];
+        $validasi = validasiFile($file);
+        
+        if ($validasi !== true) {
+            die("<script>alert('$validasi'); window.history.back();</script>");
+        }
 
-  // Apabila ada gambar yang diupload
-  if (!empty($lokasi_file)) {
-    UploadAlbum($nama_file_unik);
-    mysqli_query($conn, "INSERT INTO album(jdl_album,
-                                    album_seo,
-                                    gbr_album) 
-                            VALUES('$_POST[jdl_album]',
-                                   '$album_seo',
-                                   '$nama_file_unik')");
-  } else {
-    mysqli_query($conn, "INSERT INTO album(jdl_album,
-                                    album_seo) 
-                            VALUES('$_POST[jdl_album]',
-                                   '$album_seo')");
-  }
-  header('location:../../media.php?module=' . $module);
+        // Buat nama file unik
+        $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $nama_file_unik = uniqid() . '.' . $ext;
+
+        if (UploadAlbum($nama_file_unik)) {
+            $stmt = $conn->prepare("INSERT INTO album (jdl_album, album_seo, gbr_album) VALUES (?, ?, ?)");
+            $stmt->bind_param("sss", $jdl_album, $album_seo, $nama_file_unik);
+        } else {
+            die("<script>alert('Gagal mengunggah gambar'); window.history.back();</script>");
+        }
+    } else {
+        $stmt = $conn->prepare("INSERT INTO album (jdl_album, album_seo) VALUES (?, ?)");
+        $stmt->bind_param("ss", $jdl_album, $album_seo);
+    }
+
+    if ($stmt->execute()) {
+        header('location:../../media.php?module=' . $module);
+    } else {
+        die("<script>alert('Gagal menyimpan data'); window.history.back();</script>");
+    }
 }
 
 // Update album
-elseif ($module == 'album' and $act == 'update') {
-  $lokasi_file = $_FILES['fupload']['tmp_name'];
-  $nama_file   = $_FILES['fupload']['name'];
-  $acak           = rand(000000, 999999);
-  $nama_file_unik = $acak . $nama_file;
+elseif ($module == 'album' && $act == 'update') {
+    $id_album = intval($_POST['id']);
+    $jdl_album = mysqli_real_escape_string($conn, $_POST['jdl_album']);
+    $album_seo = seo_title($jdl_album);
 
-  $album_seo = seo_title($_POST['jdl_album']);
+    // Jika ada file yang diupload
+    if (!empty($_FILES['fupload']['name'])) {
+        $file = $_FILES['fupload'];
+        $validasi = validasiFile($file);
+        
+        if ($validasi !== true) {
+            die("<script>alert('$validasi'); window.history.back();</script>");
+        }
 
-  // Apabila gambar tidak diganti
-  if (empty($lokasi_file)) {
-    mysqli_query($conn, "UPDATE album SET jdl_album     = '$_POST[jdl_album]',
-                                  album_seo     = '$album_seo'
-                             WHERE id_album = '$_POST[id]'");
-  } else {
-    UploadAlbum($nama_file_unik);
-    mysqli_query($conn, "UPDATE album SET jdl_album  = '$_POST[jdl_album]',
-                                   album_seo = '$album_seo',
-                                   gbr_album    = '$nama_file_unik'   
-                             WHERE id_album = '$_POST[id]'");
-  }
-  header('location:../../media.php?module=' . $module);
+        // Buat nama file unik
+        $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $nama_file_unik = uniqid() . '.' . $ext;
+
+        if (UploadAlbum($nama_file_unik)) {
+            $stmt = $conn->prepare("UPDATE album SET jdl_album = ?, album_seo = ?, gbr_album = ? WHERE id_album = ?");
+            $stmt->bind_param("sssi", $jdl_album, $album_seo, $nama_file_unik, $id_album);
+        } else {
+            die("<script>alert('Gagal mengunggah gambar'); window.history.back();</script>");
+        }
+    } else {
+        $stmt = $conn->prepare("UPDATE album SET jdl_album = ?, album_seo = ? WHERE id_album = ?");
+        $stmt->bind_param("ssi", $jdl_album, $album_seo, $id_album);
+    }
+
+    if ($stmt->execute()) {
+        header('location:../../media.php?module=' . $module);
+    } else {
+        die("<script>alert('Gagal mengupdate data'); window.history.back();</script>");
+    }
 }
+?>

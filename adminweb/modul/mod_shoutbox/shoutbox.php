@@ -1,59 +1,99 @@
 <?php
+include __DIR__ . "../../../../config/koneksi.php";
 $aksi = "modul/mod_shoutbox/aksi_shoutbox.php";
-switch ($aksi) {
-  // Tampil Shoutbox
-  default:
-    echo "<h2>Shoutbox</h2>
-          <table>
-          <tr><th>no</th><th>nama</th><th>pesan</th><th>aktif</th><th>aksi</th></tr>";
+?>
 
-    $p      = new Paging;
-    $batas  = 10;
-    $posisi = $p->cariPosisi($batas);
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Shoutbox</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="container mt-4">
 
-    $tampil = mysqli_query($conn, "SELECT * FROM shoutbox ORDER BY id_shoutbox DESC LIMIT $posisi,$batas");
+<?php
+switch ($_GET['act'] ?? '') {
+    default:
+        echo "<h2 class='mb-3'>Shoutbox</h2>";
+        echo "<table class='table table-striped table-hover'>
+                <thead class='table-dark'>
+                    <tr>
+                        <th>No</th>
+                        <th>Nama</th>
+                        <th>Pesan</th>
+                        <th>Aktif</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>";
 
-    $no = $posisi + 1;
-    while ($r = mysqli_fetch_array($tampil)) {
-      echo "<tr><td>$no</td>
-                <td width=80>$r[nama]</td>
-                <td width=290>$r[pesan]</td>
-                <td width=5 align=center>$r[aktif]</td>
-                <td><a href=?module=shoutbox&act=editshoutbox&id=$r[id_shoutbox]>Edit</a> | 
-	                  <a href=$aksi?module=shoutbox&act=hapus&id=$r[id_shoutbox]>Hapus</a>
-		        </tr>";
-      $no++;
-    }
-    echo "</table>";
-    $jmldata = mysqli_num_rows(mysqli_query($conn, "SELECT * FROM shoutbox"));
-    $jmlhalaman  = $p->jumlahHalaman($jmldata, $batas);
-    $linkHalaman = $p->navHalaman($_GET['halaman'], $jmlhalaman);
+        $batas = 10;
+        $posisi = ($_GET['halaman'] ?? 1 - 1) * $batas;
 
-    echo "<div id=paging>Hal: $linkHalaman</div><br>";
-    break;
+        $stmt = $conn->prepare("SELECT * FROM shoutbox ORDER BY id_shoutbox DESC LIMIT ?, ?");
+        $stmt->bind_param("ii", $posisi, $batas);
+        $stmt->execute();
+        $result = $stmt->get_result();
 
-  case "editshoutbox":
-    $edit = mysqli_query($conn, "SELECT * FROM shoutbox WHERE id_shoutbox='$_GET[id]'");
-    $r    = mysqli_fetch_array($edit);
+        $no = $posisi + 1;
+        while ($r = $result->fetch_assoc()) {
+            echo "<tr>
+                    <td>$no</td>
+                    <td width='150'>{$r['nama']}</td>
+                    <td width='290'>{$r['pesan']}</td>
+                    <td class='text-center'>{$r['aktif']}</td>
+                    <td>
+                        <a href='?module=shoutbox&act=editshoutbox&id={$r['id_shoutbox']}' class='btn btn-warning btn-sm'>Edit</a>
+                        <a href='$aksi?module=shoutbox&act=hapus&id={$r['id_shoutbox']}' class='btn btn-danger btn-sm' onclick='return confirm(\"Yakin ingin menghapus?\")'>Hapus</a>
+                    </td>
+                  </tr>";
+            $no++;
+        }
+        echo "</tbody></table>";
+        break;
 
-    echo "<h2>Edit Shoutbox</h2>
-          <form method=POST action=$aksi?module=shoutbox&act=update>
-          <input type=hidden name=id value=$r[id_shoutbox]>
-          <table>
-          <tr><td>Nama</td><td>     : <input type=text name='nama' size=30 value='$r[nama]'></td></tr>
-          <tr><td>Website</td><td>  : <input type=text name='website' size=30 value='$r[website]'></td></tr>
-          <tr><td>Pesan</td><td> <textarea name=pesan style='width: 400px; height: 100px;'>$r[pesan]</textarea></td></tr>";
+    case "editshoutbox":
+        $stmt = $conn->prepare("SELECT * FROM shoutbox WHERE id_shoutbox = ?");
+        $stmt->bind_param("i", $_GET['id']);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $r = $result->fetch_assoc();
 
-    if ($r['aktif'] == 'Y') {
-      echo "<tr><td>Aktif</td> <td> : <input type=radio name='aktif' value='Y' checked>Y  
-                                      <input type=radio name='aktif' value='N'> N</td></tr>";
-    } else {
-      echo "<tr><td>Aktif</td> <td> : <input type=radio name='aktif' value='Y'>Y  
-                                      <input type=radio name='aktif' value='N' checked>N</td></tr>";
-    }
-
-    echo "<tr><td colspan=2><input type=submit value=Update>
-                            <input type=button value=Batal onclick=self.history.back()></td></tr>
-          </table></form>";
-    break;
+        echo "<h2 class='mb-3'>Edit Shoutbox</h2>
+              <form method='POST' action='$aksi?module=shoutbox&act=update' class='mb-4'>
+                  <input type='hidden' name='id' value='{$r['id_shoutbox']}'>
+                  <div class='mb-3'>
+                      <label class='form-label'>Nama</label>
+                      <input type='text' name='nama' class='form-control' value='{$r['nama']}' required>
+                  </div>
+                  <div class='mb-3'>
+                      <label class='form-label'>Website</label>
+                      <input type='text' name='website' class='form-control' value='{$r['website']}'>
+                  </div>
+                  <div class='mb-3'>
+                      <label class='form-label'>Pesan</label>
+                      <textarea name='pesan' class='form-control' rows='4' required>{$r['pesan']}</textarea>
+                  </div>
+                  <div class='mb-3'>
+                      <label class='form-label'>Aktif</label>
+                      <div class='form-check'>
+                          <input class='form-check-input' type='radio' name='aktif' value='Y' " . ($r['aktif'] == 'Y' ? 'checked' : '') . ">
+                          <label class='form-check-label'>Ya</label>
+                      </div>
+                      <div class='form-check'>
+                          <input class='form-check-input' type='radio' name='aktif' value='N' " . ($r['aktif'] == 'N' ? 'checked' : '') . ">
+                          <label class='form-check-label'>Tidak</label>
+                      </div>
+                  </div>
+                  <button type='submit' class='btn btn-primary'>Update</button>
+                  <button type='button' class='btn btn-secondary' onclick='history.back()'>Batal</button>
+              </form>";
+        break;
 }
+?>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

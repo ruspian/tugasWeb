@@ -7,12 +7,30 @@
 
 
 <?php
+session_start();
 include "config/koneksi.php";
+// var_dump($_SESSION);
 
 
-// RSS
-echo "<p class='fs-6 text-center fw-bold text-white'><a class='link-warning text-white text-decoration-none link-underline-opacity-100-hover' href=rss.xml target=_blank><i class='fa-solid fa-square-rss'></i> Langganan RSS</a></p>
+// Jika user sudah login, tampilkan tombol Keluar
+if (isset($_SESSION['namauser'])) {
+  echo "<p class='text-center'>
+        <a class='btn btn-danger fw-bold text-white' href='keluar.php'>
+            <i class='fa-solid fa-right-from-bracket'></i> Keluar
+        </a>
+      </p>
       <hr color=#e0cb91 noshade=noshade />";
+} else {
+  // Jika user belum login, tampilkan tombol Masuk
+  echo "<p class='text-center'>
+        <a name='keluar' class='btn btn-warning fw-bold text-white' href='daftar.php'>
+            <i class='fa-solid fa-right-to-bracket'></i> Masuk
+        </a>
+      </p>
+      <hr color=#e0cb91 noshade=noshade />";
+}
+
+
 
 // Form indeks berita
 echo "<p class='fs-6'><i class='fa-regular fa-circle-right'></i> <b>Indeks Berita</b></p>

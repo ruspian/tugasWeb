@@ -4,13 +4,11 @@ body {
 }
 #header {
   position: relative;
-  /* background-image: url(images/header.jpg); */
   background-repeat: no-repeat;
   margin-right: auto;
   margin-left: auto;
   width: 780px;
-  border: 2px solid #265180;
-  padding-top: 70px;
+  /* border: 2px solid #265180; */
   text-align: left;
 }
 
@@ -25,9 +23,8 @@ body {
 }
 #menu {
   position: absolute;
-  top: 90px;
   left: 0;
-  width: 180px;
+  width: 200px;
 }
 #menu ul {
   list-style: none;

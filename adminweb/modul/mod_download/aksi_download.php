@@ -4,52 +4,71 @@ include "../../../config/koneksi.php";
 include "../../../config/library.php";
 include "../../../config/fungsi_thumb.php";
 
-$module = $_GET['module'];
-$act = $_GET['act'];
+// Cek apakah module dan act ada
+$module = isset($_GET['module']) ? $_GET['module'] : '';
+$act = isset($_GET['act']) ? $_GET['act'] : '';
 
 // Hapus download
-if ($module == 'download' and $act == 'hapus') {
-  mysqli_query($conn, "DELETE FROM download WHERE id_download='$_GET[id]'");
-  header('location:../../media.php?module=' . $module);
+if ($module == 'download' && $act == 'hapus') {
+    $id = intval($_GET['id']); // Pastikan ID adalah angka
+    $query = mysqli_query($conn, "DELETE FROM download WHERE id_download='$id'");
+
+    if ($query) {
+        header('Location: ../../media.php?module=' . $module);
+    } else {
+        echo "Gagal menghapus data.";
+    }
 }
 
 // Input download
-elseif ($module == 'download' and $act == 'input') {
-  $lokasi_file = $_FILES['fupload']['tmp_name'];
-  $nama_file   = $_FILES['fupload']['name'];
+elseif ($module == 'download' && $act == 'input') {
+    $judul = mysqli_real_escape_string($conn, $_POST['judul']);
+    $tgl_posting = date('Y-m-d'); // Pastikan tanggal diambil dari sistem
 
-  // Apabila ada gambar yang diupload
-  if (!empty($lokasi_file)) {
-    UploadFile($nama_file);
-    mysqli_query($conn, "INSERT INTO download(judul,
-                                    nama_file,
-                                    tgl_posting) 
-                            VALUES('$_POST[judul]',
-                                   '$nama_file',
-                                   '$tgl_sekarang')");
-  } else {
-    mysqli_query($conn, "INSERT INTO download(judul,
-                                    tgl_posting) 
-                            VALUES('$_POST[judul]',
-                                   '$tgl_sekarang')");
-  }
-  header('location:../../media.php?module=' . $module);
+    $lokasi_file = $_FILES['fupload']['tmp_name'];
+    $nama_file = $_FILES['fupload']['name'];
+    $tipe_file = pathinfo($nama_file, PATHINFO_EXTENSION);
+    $allowed_extensions = ['pdf', 'doc', 'docx', 'zip', 'rar'];
+
+    // Cek apakah file memiliki ekstensi yang diperbolehkan
+    if (!empty($lokasi_file) && in_array($tipe_file, $allowed_extensions)) {
+        UploadFile($nama_file);
+        $query = "INSERT INTO download(judul, nama_file, tgl_posting) 
+                  VALUES('$judul', '$nama_file', '$tgl_posting')";
+    } else {
+        $query = "INSERT INTO download(judul, tgl_posting) 
+                  VALUES('$judul', '$tgl_posting')";
+    }
+
+    if (mysqli_query($conn, $query)) {
+        header('Location: ../../media.php?module=' . $module);
+    } else {
+        echo "Gagal menyimpan data.";
+    }
 }
 
-// Update donwload
-elseif ($module == 'download' and $act == 'update') {
-  $lokasi_file = $_FILES['fupload']['tmp_name'];
-  $nama_file   = $_FILES['fupload']['name'];
+// Update download
+elseif ($module == 'download' && $act == 'update') {
+    $id = intval($_POST['id']);
+    $judul = mysqli_real_escape_string($conn, $_POST['judul']);
 
-  // Apabila gambar tidak diganti
-  if (empty($lokasi_file)) {
-    mysqli_query($conn, "UPDATE download SET judul     = '$_POST[judul]'
-                             WHERE id_download = '$_POST[id]'");
-  } else {
-    UploadFile($nama_file);
-    mysqli_query($conn, "UPDATE download SET judul     = '$_POST[judul]',
-                                   nama_file    = '$nama_file'   
-                             WHERE id_download = '$_POST[id]'");
-  }
-  header('location:../../media.php?module=' . $module);
+    $lokasi_file = $_FILES['fupload']['tmp_name'];
+    $nama_file = $_FILES['fupload']['name'];
+    $tipe_file = pathinfo($nama_file, PATHINFO_EXTENSION);
+    $allowed_extensions = ['pdf', 'doc', 'docx', 'zip', 'rar'];
+
+    // Jika file diunggah dan memiliki ekstensi yang diperbolehkan
+    if (!empty($lokasi_file) && in_array($tipe_file, $allowed_extensions)) {
+        UploadFile($nama_file);
+        $query = "UPDATE download SET judul='$judul', nama_file='$nama_file' WHERE id_download='$id'";
+    } else {
+        $query = "UPDATE download SET judul='$judul' WHERE id_download='$id'";
+    }
+
+    if (mysqli_query($conn, $query)) {
+        header('Location: ../../media.php?module=' . $module);
+    } else {
+        echo "Gagal memperbarui data.";
+    }
 }
+?>

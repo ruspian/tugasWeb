@@ -1,59 +1,83 @@
 <?php
 $aksi = "modul/mod_komentar/aksi_komentar.php";
 switch ($aksi) {
-  // Tampil Komentar
   default:
-    echo "<h2>Komentar</h2>
-          <table>
-          <tr><th>no</th><th>nama</th><th>komentar</th><th>aktif</th><th>aksi</th></tr>";
+    echo "<div class='container mt-4'>
+            <h2>Komentar</h2>
+            <table class='table table-bordered table-striped'>
+              <thead class='thead-dark'>
+                <tr>
+                  <th>No</th>
+                  <th>Nama</th>
+                  <th>Komentar</th>
+                  <th>Aktif</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody>";
 
     $p      = new Paging;
     $batas  = 10;
     $posisi = $p->cariPosisi($batas);
 
     $tampil = mysqli_query($conn, "SELECT * FROM komentar ORDER BY id_komentar DESC LIMIT $posisi,$batas");
-
     $no = $posisi + 1;
     while ($r = mysqli_fetch_array($tampil)) {
-      echo "<tr><td>$no</td>
-                <td width=80>$r[nama_komentar]</td>
-                <td width=290>$r[isi_komentar]</td>
-                <td width=5 align=center>$r[aktif]</td>
-                <td><a href=?module=komentar&act=editkomentar&id=$r[id_komentar]>Edit</a> | 
-	                  <a href=$aksi?module=komentar&act=hapus&id=$r[id_komentar]>Hapus</a>
-		        </tr>";
+      echo "<tr>
+              <td>$no</td>
+              <td>$r[nama_komentar]</td>
+              <td>$r[isi_komentar]</td>
+              <td class='text-center'>$r[aktif]</td>
+              <td>
+                <a href='?module=komentar&act=editkomentar&id=$r[id_komentar]' class='btn btn-warning btn-sm'>Edit</a>
+                <a href='$aksi?module=komentar&act=hapus&id=$r[id_komentar]' class='btn btn-danger btn-sm mt-2' onclick='return confirm('Apakah Anda yakin ingin menghapus?');'>Hapus</a>
+              </td>
+            </tr>";
       $no++;
     }
-    echo "</table>";
+    echo "</tbody></table>";
+    
     $jmldata = mysqli_num_rows(mysqli_query($conn, "SELECT * FROM komentar"));
     $jmlhalaman  = $p->jumlahHalaman($jmldata, $batas);
     $linkHalaman = $p->navHalaman($_GET['halaman'], $jmlhalaman);
 
-    echo "<div id=paging>Hal: $linkHalaman</div><br>";
+    echo "<nav><ul class='pagination'>$linkHalaman</ul></nav></div>";
     break;
 
   case "editkomentar":
     $edit = mysqli_query($conn, "SELECT * FROM komentar WHERE id_komentar='$_GET[id]'");
     $r    = mysqli_fetch_array($edit);
 
-    echo "<h2>Edit Komentar</h2>
-          <form method=POST action=$aksi?module=komentar&act=update>
-          <input type=hidden name=id value=$r[id_komentar]>
-          <table>
-          <tr><td>Nama</td><td>     : <input type=text name='nama_komentar' size=30 value='$r[nama_komentar]'></td></tr>
-          <tr><td>Website</td><td>  : <input type=text name='url' size=30 value='$r[url]'></td></tr>
-          <tr><td>Isi Komentar</td><td> <textarea name=isi_komentar style='width: 400px; height: 100px;'>$r[isi_komentar]</textarea></td></tr>";
-
-    if ($r['aktif'] == 'Y') {
-      echo "<tr><td>Aktif</td> <td> : <input type=radio name='aktif' value='Y' checked>Y  
-                                      <input type=radio name='aktif' value='N'> N</td></tr>";
-    } else {
-      echo "<tr><td>Aktif</td> <td> : <input type=radio name='aktif' value='Y'>Y  
-                                      <input type=radio name='aktif' value='N' checked>N</td></tr>";
-    }
-
-    echo "<tr><td colspan=2><input type=submit value=Update>
-                            <input type=button value=Batal onclick=self.history.back()></td></tr>
-          </table></form>";
+    echo "<div class='container mt-4'>
+            <h2>Edit Komentar</h2>
+            <form method='POST' action='$aksi?module=komentar&act=update'>
+              <input type='hidden' name='id' value='$r[id_komentar]'>
+              <div class='form-group'>
+                <label>Nama</label>
+                <input type='text' class='form-control' name='nama_komentar' value='$r[nama_komentar]' required>
+              </div>
+              <div class='form-group'>
+                <label>Website</label>
+                <input type='text' class='form-control' name='url' value='$r[url]'>
+              </div>
+              <div class='form-group'>
+                <label>Isi Komentar</label>
+                <textarea class='form-control' name='isi_komentar' rows='4' required>$r[isi_komentar]</textarea>
+              </div>
+              <div class='form-group'>
+                <label>Aktif</label><br>
+                <div class='form-check form-check-inline'>
+                  <input class='form-check-input' type='radio' name='aktif' value='Y' ".($r['aktif'] == 'Y' ? 'checked' : '').">
+                  <label class='form-check-label'>Ya</label>
+                </div>
+                <div class='form-check form-check-inline'>
+                  <input class='form-check-input' type='radio' name='aktif' value='N' ".($r['aktif'] == 'N' ? 'checked' : '').">
+                  <label class='form-check-label'>Tidak</label>
+                </div>
+              </div>
+              <button type='submit' class='btn btn-primary'>Update</button>
+              <button type='button' class='btn btn-secondary' onclick='history.back()'>Batal</button>
+            </form>
+          </div>";
     break;
 }
